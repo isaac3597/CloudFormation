@@ -1,0 +1,83 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "CloudFormation template for creating a VPC with an EC2 instance"
+
+Parameters:
+  VpcCidrBlock:
+    Type: String
+    Default: "10.0.0.0/16"
+    Description: "CIDR block for the VPC"
+
+Resources:
+  VPC:
+    Type: "AWS::EC2::VPC"
+    Properties:
+      CidrBlock: !Ref VpcCidrBlock
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: "MyVPC"
+
+  InternetGateway:
+    Type: "AWS::EC2::InternetGateway"
+
+  VPCGatewayAttachment:
+    Type: "AWS::EC2::VPCGatewayAttachment"
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicSubnet:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: "10.0.0.0/24"
+      AvailabilityZone: !Select [0, !GetAZs ""]
+
+  PublicSubnetRouteTable:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref VPC
+
+  PublicSubnetRoute:
+    Type: "AWS::EC2::Route"
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicSubnetRouteTable
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId: !Ref InternetGateway
+
+  SubnetRouteTableAssociation:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !Ref PublicSubnetRouteTable
+
+  SecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: "Security group for EC2 instance"
+      VpcId: !Ref VPC
+
+  EC2Instance:
+    Type: "AWS::EC2::Instance"
+    Properties:
+      ImageId: "ami-12345678"  #This should be replaced with the desired AMI ID
+      InstanceType: "t2.micro"
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      SubnetId: !Ref PublicSubnet
+
+Outputs:
+  VpcId:
+    Description: "VPC ID"
+    Value: !Ref VPC
+
+  SubnetId:
+    Description: "Public Subnet ID"
+    Value: !Ref PublicSubnet
+
+  InstanceId:
+    Description: "EC2 Instance ID"
+    Value: !Ref EC2Instance
