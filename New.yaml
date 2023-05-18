@@ -1,4 +1,4 @@
----
+
 AWSTemplateFormatVersion: "2010-09-09"
 Description: "CloudFormation template for creating a VPC with an EC2 instance"
 
@@ -12,7 +12,7 @@ Resources:
   VPC:
     Type: "AWS::EC2::VPC"
     Properties:
-      CidrBlock: !Ref VpcCidrBlock
+      CidrBlock: VpcCidrBlock
       EnableDnsSupport: true
       EnableDnsHostnames: true
       Tags:
@@ -25,40 +25,40 @@ Resources:
   VPCGatewayAttachment:
     Type: "AWS::EC2::VPCGatewayAttachment"
     Properties:
-      VpcId: !Ref VPC
-      InternetGatewayId: !Ref InternetGateway
+      VpcId: VPC
+      InternetGatewayId: InternetGateway
 
   PublicSubnet:
     Type: "AWS::EC2::Subnet"
     Properties:
-      VpcId: !Ref VPC
+      VpcId: VPC
       CidrBlock: "10.0.0.0/24"
-      AvailabilityZone: !Select [0, !GetAZs ""]
+      AvailabilityZone: 
 
   PublicSubnetRouteTable:
     Type: "AWS::EC2::RouteTable"
     Properties:
-      VpcId: !Ref VPC
+      VpcId: VPC
 
   PublicSubnetRoute:
     Type: "AWS::EC2::Route"
     DependsOn: VPCGatewayAttachment
     Properties:
-      RouteTableId: !Ref PublicSubnetRouteTable
+      RouteTableId: PublicSubnetRouteTable
       DestinationCidrBlock: "0.0.0.0/0"
-      GatewayId: !Ref InternetGateway
+      GatewayId: InternetGateway
 
   SubnetRouteTableAssociation:
     Type: "AWS::EC2::SubnetRouteTableAssociation"
     Properties:
-      SubnetId: !Ref PublicSubnet
-      RouteTableId: !Ref PublicSubnetRouteTable
+      SubnetId: PublicSubnet
+      RouteTableId: PublicSubnetRouteTable
 
   SecurityGroup:
     Type: "AWS::EC2::SecurityGroup"
     Properties:
       GroupDescription: "Security group for EC2 instance"
-      VpcId: !Ref VPC
+      VpcId: VPC
 
   EC2Instance:
     Type: "AWS::EC2::Instance"
@@ -66,18 +66,18 @@ Resources:
       ImageId: "ami-12345678"  #This should be replaced with the desired AMI ID
       InstanceType: "t2.micro"
       SecurityGroupIds:
-        - !Ref SecurityGroup
-      SubnetId: !Ref PublicSubnet
+        - SecurityGroup
+      SubnetId: PublicSubnet
 
 Outputs:
   VpcId:
     Description: "VPC ID"
-    Value: !Ref VPC
+    Value: VPC
 
   SubnetId:
     Description: "Public Subnet ID"
-    Value: !Ref PublicSubnet
+    Value: PublicSubnet
 
   InstanceId:
     Description: "EC2 Instance ID"
-    Value: !Ref EC2Instance
+    Value: EC2Instance
